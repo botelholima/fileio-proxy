@@ -1,9 +1,14 @@
 {
-  "version": 2,
-  "functions": {
-    "api/upload.js": {
-      "memory": 128,
-      "maxDuration": 10
+  "builds": [
+    {
+      "src": "pages/api/upload.js",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/api/upload",
+      "dest": "pages/api/upload.js"
+    }
+  ]
 }
