@@ -22,6 +22,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log("📥 Iniciando parser do formulário...");
     const form = new formidable.IncomingForm();
 
     form.parse(req, async (err, fields, files) => {
@@ -30,14 +31,24 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Erro ao processar formulário" });
       }
 
+      console.log("✅ Formulário processado com sucesso.");
       const file = files.file;
+
       if (!file) {
+        console.warn("⚠️ Nenhum arquivo foi enviado.");
         return res.status(400).json({ error: "Nenhum arquivo enviado" });
       }
 
-      const fileData = fs.createReadStream(file.filepath);
+      console.log("📄 Arquivo recebido:", file.originalFilename, file.filepath);
+
+      const fileStream = fs.createReadStream(file.filepath);
       const formData = new FormData();
-      formData.append("file", fileData, file.originalFilename || "cartao.pkpass");
+      formData.append("file", fileStream, {
+        filename: file.originalFilename || "cartao.pkpass",
+        contentType: file.mimetype || "application/vnd.apple.pkpass"
+      });
+
+      console.log("⬆️ Enviando para file.io...");
 
       const response = await fetch("https://file.io/?expires=1d", {
         method: "POST",
@@ -46,10 +57,12 @@ export default async function handler(req, res) {
       });
 
       const result = await response.json();
-      res.status(response.status).json(result);
+      console.log("📨 Resposta da API file.io:", result);
+
+      return res.status(response.status).json(result);
     });
   } catch (err) {
     console.error("🔥 Erro inesperado:", err);
-    res.status(500).json({ error: "Erro interno no proxy" });
+    return res.status(500).json({ error: "Erro interno no proxy" });
   }
 }
