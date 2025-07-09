@@ -1,0 +1,10 @@
+{
+  "name": "fileio-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "form-data": "^4.0.0",
+    "formidable": "^2.1.1",
+    "node-fetch": "^2.6.7"
+  }
+}
