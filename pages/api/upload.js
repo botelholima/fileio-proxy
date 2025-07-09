@@ -1,4 +1,6 @@
 import formidable from 'formidable-serverless';
+import fs from 'fs';
+import FormData from 'form-data';
 
 export const config = {
   api: {
@@ -24,24 +26,30 @@ export default async function handler(req, res) {
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error("Erro ao fazer parse do formulário:", err);
-        return res.status(500).json({ error: "Erro ao processar o formulário" });
+        console.error("❌ Erro ao processar formulário:", err);
+        return res.status(500).json({ error: "Erro ao processar formulário" });
       }
 
       const file = files.file;
+      if (!file) {
+        return res.status(400).json({ error: "Nenhum arquivo enviado" });
+      }
+
+      const fileData = fs.createReadStream(file.filepath);
       const formData = new FormData();
-      formData.append("file", file.filepath ? await fs.promises.readFile(file.filepath) : file, file.originalFilename || "cartao.pkpass");
+      formData.append("file", fileData, file.originalFilename || "cartao.pkpass");
 
       const response = await fetch("https://file.io/?expires=1d", {
         method: "POST",
-        body: formData
+        body: formData,
+        headers: formData.getHeaders()
       });
 
       const result = await response.json();
-      return res.status(response.status).json(result);
+      res.status(response.status).json(result);
     });
-  } catch (error) {
-    console.error("Erro no servidor proxy:", error);
-    return res.status(500).json({ error: "Erro interno ao enviar o arquivo" });
+  } catch (err) {
+    console.error("🔥 Erro inesperado:", err);
+    res.status(500).json({ error: "Erro interno no proxy" });
   }
 }
